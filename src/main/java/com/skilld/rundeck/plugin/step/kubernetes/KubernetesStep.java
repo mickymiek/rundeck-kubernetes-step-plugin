@@ -258,10 +258,10 @@ public class KubernetesStep implements StepPlugin, Describable {
 					String name = null;
 					for (Pod pod : podList.getItems()) {
 						name = pod.getMetadata().getName();
+						client.pods().inNamespace(namespace).withName(name).delete();
 						if(pod.getStatus().getPhase().equals("Pending")) {
 							pluginLogger.log(0, name + " : Timeout");
 						}
-						client.pods().inNamespace(namespace).withName(name).delete();
 					}
 					client.close();
 				} catch (KubernetesClientException | InterruptedException e) {
@@ -269,6 +269,7 @@ public class KubernetesStep implements StepPlugin, Describable {
 					throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
 				}
 			} catch (KubernetesClientException | StepException e) {
+				client.close();
 				logger.error(e.getMessage(), e);
 				throw e;
 			}
