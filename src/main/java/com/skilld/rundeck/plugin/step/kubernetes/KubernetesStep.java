@@ -243,12 +243,12 @@ public class KubernetesStep implements StepPlugin, Describable {
 					jobCloseLatch.await();
 					jobWatch.close();
 					podWatch.close();
-//					client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
+					client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
 					PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
 					String name = null;
 					for (Pod pod : podList.getItems()) {
 						name = pod.getMetadata().getName();
-//						client.pods().inNamespace(namespace).withName(name).delete();
+						client.pods().inNamespace(namespace).withName(name).delete();
 					}
 					client.close();
 					// if timeout raise except.
