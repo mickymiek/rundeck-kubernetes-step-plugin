@@ -109,22 +109,20 @@ public class KubernetesStep implements StepPlugin, Describable {
 	public Description getDescription() {
 		return DESC;
 	}
-
 	
-	public List<String> buildInput(String inputType){
-		for (Map.Entry<String, String> option : context.getDataContext().get("option").entrySet()){
-			inputType = inputType.replace("${" + option.getKey() + "}", option.getValue());
+	private List<String> buildInput(String _input, Map<String, String> options){
+		for (Map.Entry<String, String> option : options.entrySet()){
+			_input = _input.replace("${" + option.getKey() + "}", option.getValue());
 		}
 		List<String> input = new ArrayList<String>();
-		Matcher inputParts = Pattern.compile("(\"(?:.(?!(?<!\\\\)\"))*.?\"|'(?:.(?!(?<!\\\\)'))*.?'|\\S+)").matcher(inputType);
+		Matcher inputParts = Pattern.compile("(\"(?:.(?!(?<!\\\\)\"))*.?\"|'(?:.(?!(?<!\\\\)'))*.?'|\\S+)").matcher(_input);
 		while(inputParts.find()) {
-			input.add(inputParts.group(1));
+			input.add(inputParts.group(1).replaceAll("(?<![\\\\])\"",""));
 		}
 		return input;
 	}
 
-
-	public void executeStep(PluginStepContext context, Map<String,Object> configuration) {
+	public void executeStep(PluginStepContext context, Map<String,Object> configuration) throws StepException {
 		PluginLogger pluginLogger = context.getLogger();
 		Config clientConfiguration = new ConfigBuilder().withWatchReconnectLimit(2).build();
 		try (KubernetesClient client = new DefaultKubernetesClient(clientConfiguration)) {
@@ -188,10 +186,10 @@ public class KubernetesStep implements StepPlugin, Describable {
 			}	
 			Container container = jobBuilder.getSpec().getTemplate().getSpec().getContainers().get(0);
 			if(null != configuration.get("command")) {
-				container.setCommand(buildInput(configuration.get("command").toString()));
+				container.setCommand(buildInput(configuration.get("command").toString(), context.getDataContext().get("option")));
 			}
 			if(null != configuration.get("arguments")) {
-				container.setArgs(buildInput(configuration.get("arguments").toString()));
+				container.setArgs(buildInput(configuration.get("arguments").toString(), context.getDataContext().get("option")));
 			}
 			jobBuilder
 				.editSpec()
