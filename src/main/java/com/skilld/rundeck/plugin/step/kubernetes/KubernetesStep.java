@@ -110,7 +110,21 @@ public class KubernetesStep implements StepPlugin, Describable {
 		return DESC;
 	}
 
-	public void executeStep(PluginStepContext context, Map<String,Object> configuration) throws StepException {
+	
+	public List<String> buildInput(String inputType){
+		for (Map.Entry<String, String> option : context.getDataContext().get("option").entrySet()){
+			inputType = inputType.replace("${" + option.getKey() + "}", option.getValue());
+		}
+		List<String> input = new ArrayList<String>();
+		Matcher inputParts = Pattern.compile("(\"(?:.(?!(?<!\\\\)\"))*.?\"|'(?:.(?!(?<!\\\\)'))*.?'|\\S+)").matcher(inputType);
+		while(inputParts.find()) {
+			input.add(inputParts.group(1));
+		}
+		return input;
+	}
+
+
+	public void executeStep(PluginStepContext context, Map<String,Object> configuration) {
 		PluginLogger pluginLogger = context.getLogger();
 		Config clientConfiguration = new ConfigBuilder().withWatchReconnectLimit(2).build();
 		try (KubernetesClient client = new DefaultKubernetesClient(clientConfiguration)) {
@@ -171,31 +185,13 @@ public class KubernetesStep implements StepPlugin, Describable {
 							.endSpec()
 						.endTemplate()
 					.endSpec();
-			}
+			}	
 			Container container = jobBuilder.getSpec().getTemplate().getSpec().getContainers().get(0);
 			if(null != configuration.get("command")) {
-				String _command = configuration.get("command").toString();
-				for (Map.Entry<String, String> option : context.getDataContext().get("option").entrySet()) {
-					_command = _command.replace("${" + option.getKey() + "}", option.getValue());
-				}
-				List<String> command = new ArrayList<String>();
-				Matcher commandParts = Pattern.compile("(\"(?:.(?!(?<!\\\\)\"))*.?\"|'(?:.(?!(?<!\\\\)'))*.?'|\\S+)").matcher(_command);
-				while (commandParts.find()) {
-					command.add(commandParts.group(1));
-				}
-				container.setCommand(command);
+				container.setCommand(buildInput(configuration.get("command").toString()));
 			}
 			if(null != configuration.get("arguments")) {
-				String _arguments = configuration.get("arguments").toString();
-				for (Map.Entry<String, String> option : context.getDataContext().get("option").entrySet()) {
-					_arguments = _arguments.replace("${" + option.getKey() + "}", option.getValue());
-				}
-				List<String> arguments = new ArrayList<String>();
-				Matcher argumentsParts = Pattern.compile("(\"(?:.(?!(?<!\\\\)\"))*.?\"|'(?:.(?!(?<!\\\\)'))*.?'|\\S+)").matcher(_arguments);
-				while (argumentsParts.find()) {
-					arguments.add(argumentsParts.group(1));
-				}
-				container.setArgs(arguments);
+				container.setArgs(buildInput(configuration.get("arguments").toString()));
 			}
 			jobBuilder
 				.editSpec()
@@ -214,6 +210,7 @@ public class KubernetesStep implements StepPlugin, Describable {
 					{
 						jobCloseLatch.countDown();
 					}
+
 				}
 				@Override
 				public void onClose(KubernetesClientException e) {
@@ -245,25 +242,18 @@ public class KubernetesStep implements StepPlugin, Describable {
 			try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
 				try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
 					client.extensions().jobs().inNamespace(namespace).withName(jobName).create(jobBuilder.build());
-					if(null != activeDeadlineSeconds) {
-						jobCloseLatch.await(activeDeadlineSeconds, TimeUnit.SECONDS);
-					}
-					else {
-						jobCloseLatch.await();
-					}
+					jobCloseLatch.await();
 					jobWatch.close();
 					podWatch.close();
-					client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
+//					client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
 					PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
 					String name = null;
 					for (Pod pod : podList.getItems()) {
 						name = pod.getMetadata().getName();
-						client.pods().inNamespace(namespace).withName(name).delete();
-						if(pod.getStatus().getPhase().equals("Pending")) {
-							pluginLogger.log(0, name + " : Timeout");
-						}
+//						client.pods().inNamespace(namespace).withName(name).delete();
 					}
 					client.close();
+					// if timeout raise except.
 				} catch (KubernetesClientException | InterruptedException e) {
 					logger.error(e.getMessage(), e);
 					throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
