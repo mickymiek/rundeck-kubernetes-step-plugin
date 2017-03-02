@@ -41,43 +41,43 @@ public class JobConfiguration {
 
     /* Getters */
     public String getImage() {
-        return conf.get("image");
+        return conf.get("image").toString();
     }
 
     public String getImagePullSecrets() {
-        return conf.get("imagePullSecrets");
+        return conf.get("imagePullSecrets").toString();
     }
 
     public String getCommand() {
-        return conf.get("command");
+        return conf.get("command").toString();
     }
 
     public String getArguments() {
-        return conf.get("arguments");
+        return conf.get("arguments").toString();
     }
 
     public String getNodeSelector() {
-        return conf.get("nodeSelector");
+        return conf.get("nodeSelector").toString();
     }
 
     public String getNamespace() {
-        return conf.get("namespace");
+        return conf.get("namespace").toString();
     }
 
     public String getActiveDeadlineSeconds() {
-        return conf.get("activeDeadlineSeconds");
+        return conf.get("activeDeadlineSeconds").toString();
     }
 
     public String getRestartPolicy() {
-        return conf.get("restartPolicy");
+        return conf.get("restartPolicy").toString();
     }
 
     public String getCompletions() {
-        return conf.get("completions");
+        return conf.get("completions").toString();
     }
 
     public String getParallelism() {
-        return conf.get("parallelism");
+        return conf.get("parallelism").toString();
     }
 
     /* Setters */
