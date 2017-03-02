@@ -44,39 +44,39 @@ public class JobConfiguration {
         return conf.get("image");
     }
 
-    public String getImagePullSecrets() {
+    public Object getImagePullSecrets() {
         return conf.get("imagePullSecrets");
     }
 
-    public String getCommand() {
+    public Object getCommand() {
         return conf.get("command");
     }
 
-    public String getArguments() {
+    public Object getArguments() {
         return conf.get("arguments");
     }
 
-    public String getNodeSelector() {
+    public Object getNodeSelector() {
         return conf.get("nodeSelector");
     }
 
-    public String getNamespace() {
+    public Object getNamespace() {
         return conf.get("namespace");
     }
 
-    public String getActiveDeadlineSeconds() {
+    public Object getActiveDeadlineSeconds() {
         return conf.get("activeDeadlineSeconds");
     }
 
-    public String getRestartPolicy() {
+    public Object getRestartPolicy() {
         return conf.get("restartPolicy");
     }
 
-    public String getCompletions() {
+    public Object getCompletions() {
         return conf.get("completions");
     }
 
-    public String getParallelism() {
+    public Object getParallelism() {
         return conf.get("parallelism");
     }
 
