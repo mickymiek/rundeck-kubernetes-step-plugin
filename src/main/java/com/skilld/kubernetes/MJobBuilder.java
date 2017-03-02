@@ -107,7 +107,7 @@ public class MJobBuilder {
 				.editSpec()
 					.editTemplate()
 						.editSpec()
-							.withNodeSelector((HashMap<String, String>) Arrays.asList(conf.getNodeSelector()).toString().split(",")).stream().map(s -> s.split("=")).collect(Collectors.toMap(e -> e[0], e -> e[1])))
+							.withNodeSelector((HashMap<String, String>) Arrays.asList(conf.getNodeSelector().toString().split(",")).stream().map(s -> s.split("=")).collect(Collectors.toMap(e -> e[0], e -> e[1])))
 						.endSpec()
 					.endTemplate()
 				.endSpec();
