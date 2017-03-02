@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,6 +21,8 @@
  */
 
 package com.skilld.kubernetes;
+
+import com.skilld.rundeck.plugin.step.kubernetes.JobConfiguration;
 
 import com.dtolabs.rundeck.core.common.Framework;
 import com.dtolabs.rundeck.core.plugins.Plugin;
@@ -57,6 +59,7 @@ public class MJobBuilder {
 	}
 
 	public JobBuilder build(PluginStepContext context, Map<String, Object> configuration, Map<String, String> labels, String jobName, String namespace) {
+        JobConfiguration conf = new JobConfiguration(configuration);
 		JobBuilder jobBuilder = new JobBuilder()
 			.withNewMetadata()
 				.withName(jobName)
@@ -80,7 +83,7 @@ public class MJobBuilder {
 						.endContainer()
 					.endSpec()
 				.endTemplate()
-			.endSpec();	
+			.endSpec();
 		Long activeDeadlineSeconds = null;
 		if(null != configuration.get("activeDeadlineSeconds")){
 			activeDeadlineSeconds = Long.valueOf(configuration.get("activeDeadlineSeconds").toString());

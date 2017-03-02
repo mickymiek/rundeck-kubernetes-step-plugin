@@ -70,123 +70,123 @@ import java.util.regex.Matcher;
 @Plugin(name = "kubernetes-step", service = "WorkflowStep")
 @PluginDescription(title = "Kubernetes Jobs Execution", description = "Run a job through kubernetes.")
 public class KubernetesStep implements StepPlugin, Describable {
-	static Logger logger = Logger.getLogger(KubernetesStep.class);
-	private Framework framework;
-	public static final String STEP_NAME = "kubernetes-step";
-	public static final String IMAGE = "image";
-	public static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
-	public static final String COMMAND = "command";
-	public static final String ARGUMENTS = "arguments";
-	public static final String NODE_SELECTOR = "nodeSelector";
-	public static final String NAMESPACE = "namespace";
-	public static final String ACTIVE_DEADLINE = "activeDeadlineSeconds";
-	public static final String RESTART_POLICY = "restartPolicy";
-	public static final String COMPLETIONS = "completions";
-	public static final String PARALLELISM = "parallelism";
+    static Logger logger = Logger.getLogger(KubernetesStep.class);
+    private Framework framework;
+    public static final String STEP_NAME = "kubernetes-step";
+    public static final String IMAGE = "image";
+    public static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
+    public static final String COMMAND = "command";
+    public static final String ARGUMENTS = "arguments";
+    public static final String NODE_SELECTOR = "nodeSelector";
+    public static final String NAMESPACE = "namespace";
+    public static final String ACTIVE_DEADLINE = "activeDeadlineSeconds";
+    public static final String RESTART_POLICY = "restartPolicy";
+    public static final String COMPLETIONS = "completions";
+    public static final String PARALLELISM = "parallelism";
 
-	public static enum Reason implements FailureReason {
-		UnexepectedFailure
-	}
+    public static enum Reason implements FailureReason {
+        UnexepectedFailure
+    }
 
-	public KubernetesStep(final Framework framework) {
-		this.framework = framework;
-	}
+    public KubernetesStep(final Framework framework) {
+        this.framework = framework;
+    }
 
-	static Description DESC = DescriptionBuilder.builder()
-		.name(STEP_NAME)
-		.title("Kubernetes")
-		.description("Runs a Kubernetes job")
-		.property(PropertyUtil.string(IMAGE, "Image", "The container image to use", true, null))
-		.property(PropertyUtil.string(IMAGE_PULL_SECRETS, "ImagePullSecrets", "The image pull secrets name", false, null))
-		.property(PropertyUtil.string(COMMAND, "Command", "The command to run in the container", false, null))
-		.property(PropertyUtil.string(ARGUMENTS, "Arguments", "The command arguments", false, null))
-		.property(PropertyUtil.string(NODE_SELECTOR, "Node selector", "Kubernetes node label selector", false, null))
-		.property(PropertyUtil.string(NAMESPACE, "Namespace", "Kubernetes namespace", true, "default"))
-		.property(PropertyUtil.integer(ACTIVE_DEADLINE, "Active deadline", "The job deadline (in seconds)", false, null))
-		.property(PropertyUtil.select(RESTART_POLICY, "Restart policy", "The restart policy to apply to the job", true, "Never", Arrays.asList("Never", "OnFailure")))
-		.property(PropertyUtil.integer(COMPLETIONS, "Completions", "Number of pods to wait for success exit before considering the job complete", true, "1"))
-		.property(PropertyUtil.integer(PARALLELISM, "Parallelism", "Number of pods running at any instant", true, "1"))
-		.build();
+    static Description DESC = DescriptionBuilder.builder()
+        .name(STEP_NAME)
+        .title("Kubernetes")
+        .description("Runs a Kubernetes job")
+        .property(PropertyUtil.string(IMAGE, "Image", "The container image to use", true, null))
+        .property(PropertyUtil.string(IMAGE_PULL_SECRETS, "ImagePullSecrets", "The image pull secrets name", false, null))
+        .property(PropertyUtil.string(COMMAND, "Command", "The command to run in the container", false, null))
+        .property(PropertyUtil.string(ARGUMENTS, "Arguments", "The command arguments", false, null))
+        .property(PropertyUtil.string(NODE_SELECTOR, "Node selector", "Kubernetes node label selector", false, null))
+        .property(PropertyUtil.string(NAMESPACE, "Namespace", "Kubernetes namespace", true, "default"))
+        .property(PropertyUtil.integer(ACTIVE_DEADLINE, "Active deadline", "The job deadline (in seconds)", false, null))
+        .property(PropertyUtil.select(RESTART_POLICY, "Restart policy", "The restart policy to apply to the job", true, "Never", Arrays.asList("Never", "OnFailure")))
+        .property(PropertyUtil.integer(COMPLETIONS, "Completions", "Number of pods to wait for success exit before considering the job complete", true, "1"))
+        .property(PropertyUtil.integer(PARALLELISM, "Parallelism", "Number of pods running at any instant", true, "1"))
+        .build();
 
-	public Description getDescription() {
-		return DESC;
-	}
-	
-	public void executeStep(PluginStepContext context, Map<String,Object> configuration) throws StepException {
-		PluginLogger pluginLogger = context.getLogger();
-		Config clientConfiguration = new ConfigBuilder().withWatchReconnectLimit(2).build();
-		try (KubernetesClient client = new DefaultKubernetesClient(clientConfiguration)) {
-			String jobName = context.getDataContext().get("job").get("name").toString().toLowerCase() + "-" + context.getDataContext().get("job").get("execid");
-			String namespace = configuration.get("namespace").toString();
-			Map<String, String> labels = new HashMap<String, String>();
-			labels.put("job-name", jobName);
-			
-			MJobBuilder job = new MJobBuilder();
-			MJobBuilder test = job.build(context, configuration, labels, jobName, namespace);
+    public Description getDescription() {
+        return DESC;
+    }
 
-			CountDownLatch jobCloseLatch = new CountDownLatch(1);
-			Watcher jobWatcher = new Watcher<Job>() {
-				@Override
-				public void eventReceived(Action action, Job resource) {
-					if(resource.getStatus().getCompletionTime() != null)
-					{
-						jobCloseLatch.countDown();
-					}
+    public void executeStep(PluginStepContext context, Map<String,Object> configuration) throws StepException {
+        PluginLogger pluginLogger = context.getLogger();
+        Config clientConfiguration = new ConfigBuilder().withWatchReconnectLimit(2).build();
+        try (KubernetesClient client = new DefaultKubernetesClient(clientConfiguration)) {
+            String jobName = context.getDataContext().get("job").get("name").toString().toLowerCase() + "-" + context.getDataContext().get("job").get("execid");
+            String namespace = configuration.get("namespace").toString();
+            Map<String, String> labels = new HashMap<String, String>();
+            labels.put("job-name", jobName);
 
-				}
-				@Override
-				public void onClose(KubernetesClientException e) {
-					if (null != e) {
-						logger.error(e.getMessage());
-					}
-				}
-			};
-			Watcher podWatcher = new Watcher<Pod>() {
-				@Override
-				public void eventReceived(Action action, Pod resource) {
-					String name = resource.getMetadata().getName();
-					String deletionTimeStamp = resource.getMetadata().getDeletionTimestamp();
-					String phase = resource.getStatus().getPhase();
-					if(phase.equals("Succeeded") && null ==	deletionTimeStamp) {
-						pluginLogger.log(2, name + " : " + client.pods().inNamespace(namespace).withName(name).getLog(true));
-					}
-					if(phase.equals("Failed")) {
-						pluginLogger.log(0, name + " : " + client.pods().inNamespace(namespace).withName(name).getLog(true));
-					}
-				}
-				@Override
-				public void onClose(KubernetesClientException e) {
-					if (null != e) {
-						logger.error(e.getMessage());
-					}
-				}
-			};
-			try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
-				try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
-					client.extensions().jobs().inNamespace(namespace).withName(jobName).create(test.build());
-					jobCloseLatch.await();
-					jobWatch.close();
-					podWatch.close();
-					client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
-					PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
-					String name = null;
-					for (Pod pod : podList.getItems()) {
-						name = pod.getMetadata().getName();
-						client.pods().inNamespace(namespace).withName(name).delete();
-					}
-					client.close();
-				} catch (KubernetesClientException | InterruptedException e) {
-					logger.error(e.getMessage(), e);
-					throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
-				}
-			} catch (KubernetesClientException | StepException e) {
-				client.close();
-				logger.error(e.getMessage(), e);
-				throw e;
-			}
-		} catch (KubernetesClientException | StepException e) {
-			logger.error(e.getMessage(), e);
-			throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
-		}
-	}
+            MJobBuilder job = new MJobBuilder();
+            JobBuilder test = job.build(context, configuration, labels, jobName, namespace);
+
+            CountDownLatch jobCloseLatch = new CountDownLatch(1);
+            Watcher jobWatcher = new Watcher<Job>() {
+                @Override
+                public void eventReceived(Action action, Job resource) {
+                    if(resource.getStatus().getCompletionTime() != null)
+                    {
+                        jobCloseLatch.countDown();
+                    }
+
+                }
+                @Override
+                public void onClose(KubernetesClientException e) {
+                    if (null != e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+            };
+            Watcher podWatcher = new Watcher<Pod>() {
+                @Override
+                public void eventReceived(Action action, Pod resource) {
+                    String name = resource.getMetadata().getName();
+                    String deletionTimeStamp = resource.getMetadata().getDeletionTimestamp();
+                    String phase = resource.getStatus().getPhase();
+                    if(phase.equals("Succeeded") && null ==	deletionTimeStamp) {
+                        pluginLogger.log(2, name + " : " + client.pods().inNamespace(namespace).withName(name).getLog(true));
+                    }
+                    if(phase.equals("Failed")) {
+                        pluginLogger.log(0, name + " : " + client.pods().inNamespace(namespace).withName(name).getLog(true));
+                    }
+                }
+                @Override
+                public void onClose(KubernetesClientException e) {
+                    if (null != e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+            };
+            try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
+                try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
+                    client.extensions().jobs().inNamespace(namespace).withName(jobName).create(test.build());
+                    jobCloseLatch.await();
+                    jobWatch.close();
+                    podWatch.close();
+                    client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
+                    PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
+                    String name = null;
+                    for (Pod pod : podList.getItems()) {
+                        name = pod.getMetadata().getName();
+                        client.pods().inNamespace(namespace).withName(name).delete();
+                    }
+                    client.close();
+                } catch (KubernetesClientException | InterruptedException e) {
+                    logger.error(e.getMessage(), e);
+                    throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
+                }
+            } catch (KubernetesClientException | StepException e) {
+                client.close();
+                logger.error(e.getMessage(), e);
+                throw e;
+            }
+        } catch (KubernetesClientException | StepException e) {
+            logger.error(e.getMessage(), e);
+            throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
+        }
+    }
 }
