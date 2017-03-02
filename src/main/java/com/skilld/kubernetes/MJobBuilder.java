@@ -69,7 +69,7 @@ public class MJobBuilder {
 				.withNewSelector()
 				.withMatchLabels(labels)
 				.endSelector()
-				.withParallelism(Integer.valueOf(conf.getParallelism()))
+				.withParallelism(Integer.valueOf(configuration.get("parallelism").toString()))
 				.withCompletions(Integer.valueOf(configuration.get("completions").toString()))
 				.withNewTemplate()
 					.withNewMetadata()
