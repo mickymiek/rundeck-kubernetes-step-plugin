@@ -79,15 +79,15 @@ public class JobConfiguration {
 
 	/* Setters */
 	public void setImage(String image, Object val) {
-		conf.put(image, obj);
+		conf.put(image, val);
 	}
 
 	public void setImagePullSecrets(String imagePullSecrets, Object val) {
-		conf.put(imagePullSecrets, obj);
+		conf.put(imagePullSecrets, val);
 	}
 
 	public void setCommand(String command, Object val) {
-		conf.put(command, obj);
+		conf.put(command, val);
 	}
 
 	public void setArguments(String arguments, Object val) {
