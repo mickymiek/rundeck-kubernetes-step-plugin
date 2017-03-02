@@ -40,7 +40,7 @@ public class JobConfiguration {
     }
 
     /* Getters */
-    public String getImage() {
+    public JobConfiguration getImage() {
         return conf.get("image");
     }
 
