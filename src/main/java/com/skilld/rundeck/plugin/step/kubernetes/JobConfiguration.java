@@ -29,92 +29,92 @@ import java.util.*;
 
 public class JobConfiguration {
 
-    private Map<String, Object> conf;
+	private Map<String, Object> conf;
 
-    /* Constructor */
-    public JobConfiguration(Map<String, Object> configuration) {
-        conf = configuration;
-    }
+	/* Constructor */
+	public JobConfiguration(Map<String, Object> configuration) {
+		conf = configuration;
+	}
 
-    /* Getters */
-    public Object getImage() {
-        return conf.get("image");
-    }
+	/* Getters */
+	public Object getImage() {
+		return conf.get("image");
+	}
 
-    public Object getImagePullSecrets() {
-        return conf.get("imagePullSecrets");
-    }
+	public Object getImagePullSecrets() {
+		return conf.get("imagePullSecrets");
+	}
 
-    public Object getCommand() {
-        return conf.get("command");
-    }
+	public Object getCommand() {
+		return conf.get("command");
+	}
 
-    public Object getArguments() {
-        return conf.get("arguments");
-    }
+	public Object getArguments() {
+		return conf.get("arguments");
+	}
 
-    public Object getNodeSelector() {
-        return conf.get("nodeSelector");
-    }
+	public Object getNodeSelector() {
+		return conf.get("nodeSelector");
+	}
 
-    public Object getNamespace() {
-        return conf.get("namespace");
-    }
+	public Object getNamespace() {
+		return conf.get("namespace");
+	}
 
-    public Object getActiveDeadlineSeconds() {
-        return conf.get("activeDeadlineSeconds");
-    }
+	public Object getActiveDeadlineSeconds() {
+		return conf.get("activeDeadlineSeconds");
+	}
 
-    public Object getRestartPolicy() {
-        return conf.get("restartPolicy");
-    }
+	public Object getRestartPolicy() {
+		return conf.get("restartPolicy");
+	}
 
-    public Object getCompletions() {
-        return conf.get("completions");
-    }
+	public Object getCompletions() {
+		return conf.get("completions");
+	}
 
-    public Object getParallelism() {
-        return conf.get("parallelism");
-    }
+	public Object getParallelism() {
+		return conf.get("parallelism");
+	}
 
-    /* Setters */
-    public void setImage(String image) {
+	/* Setters */
+	public void setImage(String image, Object val) {
+		conf.put(image, obj);
+	}
 
-    }
+	public void setImagePullSecrets(String imagePullSecrets, Object val) {
+		conf.put(imagePullSecrets, obj);
+	}
 
-    public void setImagePullSecrets(String imagePullSecrets) {
+	public void setCommand(String command, Object val) {
+		conf.put(command, obj);
+	}
 
-    }
+	public void setArguments(String arguments, Object val) {
+		conf.put(arguments, val);
+	}
 
-    public void setCommand(String command) {
+	public void setNodeSelector(String nodeSelector, Object val) {
+		conf.put(nodeSelector, val);
+	}
 
-    }
+	public void setNamespace(String namespace, Object val) {
+		conf.put(namespace, val);
+	}
 
-    public void setArguments(String arguments) {
+	public void setActiveDeadlineSeconds(String activeDeadlineSeconds, Object val) {
+		conf.put(activeDeadlineSeconds, val);
+	}
 
-    }
+	public void setRestartPolicy(String restartPolicy, Object val) {
+		conf.put(restartPolicy, val);
+	}
 
-    public void setNodeSelector(String nodeSelector) {
+	public void setCompletions(String completions, Object val) {
+		conf.put(completions, val);
+	}
 
-    }
-
-    public void setNamespace(String namespace) {
-
-    }
-
-    public void setActiveDeadline(String activeDeadline) {
-
-    }
-
-    public void setRestartPolicy(String restartPolicy) {
-
-    }
-
-    public void setCompletions(String completions) {
-
-    }
-
-    public void setParallelism(String parallelism) {
-
-    }
+	public void setParallelism(String parallelism, Object val) {
+		conf.put(parallelism, val);
+	}
 }
