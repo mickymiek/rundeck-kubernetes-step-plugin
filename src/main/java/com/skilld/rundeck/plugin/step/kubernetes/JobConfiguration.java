@@ -21,10 +21,7 @@
  */
 package com.skilld.rundeck.plugin.step.kubernetes;
 
-//import com.skilld.kubernetes.MJobBuilder;
-
 import com.dtolabs.rundeck.core.plugins.configuration.*;
-
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 
 import java.util.*;

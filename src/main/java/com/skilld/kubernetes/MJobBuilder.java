@@ -69,56 +69,56 @@ public class MJobBuilder {
 				.withNewSelector()
 				.withMatchLabels(labels)
 				.endSelector()
-				.withParallelism(Integer.valueOf(configuration.get("parallelism").toString()))
-				.withCompletions(Integer.valueOf(configuration.get("completions").toString()))
+				.withParallelism(Integer.valueOf(conf.getParallelism().toString()))
+				.withCompletions(Integer.valueOf(conf.getCompletions().toString()))
 				.withNewTemplate()
 					.withNewMetadata()
 						.withLabels(labels)
 					.endMetadata()
 					.withNewSpec()
-						.withRestartPolicy(configuration.get("restartPolicy").toString())
+						.withRestartPolicy(conf.getRestartPolicy().toString())
 						.addNewContainer()
 							.withName(jobName)
-							.withImage(configuration.get("image").toString())
+							.withImage(conf.getImage().toString())
 						.endContainer()
 					.endSpec()
 				.endTemplate()
 			.endSpec();
 		Long activeDeadlineSeconds = null;
-		if(null != configuration.get("activeDeadlineSeconds")){
-			activeDeadlineSeconds = Long.valueOf(configuration.get("activeDeadlineSeconds").toString());
+		if(null != conf.getActiveDeadlineSeconds()){
+			activeDeadlineSeconds = Long.valueOf(conf.getActiveDeadlineSeconds().toString());
 			jobBuilder
 				.editSpec()
 					.withActiveDeadlineSeconds(activeDeadlineSeconds)
 				.endSpec();
 		}
-		if(null != configuration.get("imagePullSecrets")){
+		if(null != conf.getImagePullSecrets()){
 			jobBuilder
 				.editSpec()
 					.editTemplate()
 						.editSpec()
-							.withImagePullSecrets(new LocalObjectReference(configuration.get("imagePullSecrets").toString()))
+							.withImagePullSecrets(new LocalObjectReference(conf.getImagePullSecrets().toString()))
 						.endSpec()
 					.endTemplate()
 				.endSpec();
 		}
-		if(null != configuration.get("nodeSelector")) {
+		if(null != conf.getNodeSelector()) {
 			jobBuilder
 				.editSpec()
 					.editTemplate()
 						.editSpec()
-							.withNodeSelector((HashMap<String, String>) Arrays.asList(configuration.get("nodeSelector").toString().split(",")).stream().map(s -> s.split("=")).collect(Collectors.toMap(e -> e[0], e -> e[1])))
+							.withNodeSelector((HashMap<String, String>) Arrays.asList(conf.getNodeSelector()).toString().split(",")).stream().map(s -> s.split("=")).collect(Collectors.toMap(e -> e[0], e -> e[1])))
 						.endSpec()
 					.endTemplate()
 				.endSpec();
 		}
 
 		Container container = jobBuilder.getSpec().getTemplate().getSpec().getContainers().get(0);
-		if(null != configuration.get("command")) {
-			container.setCommand(buildInput(configuration.get("command").toString(), context.getDataContext().get("option")));
+		if(null != conf.getCommand()) {
+			container.setCommand(buildInput(conf.getCommand().toString(), context.getDataContext().get("option")));
 		}
-		if(null != configuration.get("arguments")) {
-			container.setArgs(buildInput(configuration.get("arguments").toString(), context.getDataContext().get("option")));
+		if(null != conf.getArguments()) {
+			container.setArgs(buildInput(conf.getArguments().toString(), context.getDataContext().get("option")));
 		}
 		jobBuilder
 			.editSpec()
