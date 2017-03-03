@@ -21,7 +21,8 @@
  */
 package com.skilld.rundeck.plugin.step.kubernetes;
 
-import com.skilld.kubernetes.MJobBuilder;
+import com.skilld.kubernetes.JobConfiguration;
+import com.skilld.kubernetes.JobBuilder;
 
 import com.dtolabs.rundeck.core.common.Framework;
 import com.dtolabs.rundeck.core.plugins.Plugin;
@@ -54,14 +55,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
 
 /**
  * KubernetesExecutor allow to run kubernetes jobs from rundeck
@@ -121,18 +114,14 @@ public class KubernetesStep implements StepPlugin, Describable {
             Map<String, String> labels = new HashMap<String, String>();
             labels.put("job-name", jobName);
 
-            MJobBuilder job = new MJobBuilder();
-            JobBuilder test = job.build(context, configuration, labels, jobName, namespace);
-
             CountDownLatch jobCloseLatch = new CountDownLatch(1);
             Watcher jobWatcher = new Watcher<Job>() {
                 @Override
                 public void eventReceived(Action action, Job resource) {
-                    if(resource.getStatus().getCompletionTime() != null)
-                    {
+                    if("timeout" == getJobState(resource) || "complete" == getJobState(resource)) {
+//                    if(resource.getStatus().getCompletionTime() != null) {
                         jobCloseLatch.countDown();
                     }
-
                 }
                 @Override
                 public void onClose(KubernetesClientException e) {
@@ -147,7 +136,7 @@ public class KubernetesStep implements StepPlugin, Describable {
                     String name = resource.getMetadata().getName();
                     String deletionTimeStamp = resource.getMetadata().getDeletionTimestamp();
                     String phase = resource.getStatus().getPhase();
-                    if(phase.equals("Succeeded") && null ==	deletionTimeStamp) {
+                    if(phase.equals("Succeeded") && null == deletionTimeStamp) {
                         pluginLogger.log(2, name + " : " + client.pods().inNamespace(namespace).withName(name).getLog(true));
                     }
                     if(phase.equals("Failed")) {
@@ -161,18 +150,40 @@ public class KubernetesStep implements StepPlugin, Describable {
                     }
                 }
             };
+
             try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
                 try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
-                    client.extensions().jobs().inNamespace(namespace).withName(jobName).create(test.build());
+		    jobConfiguration = new JobConfiguration();
+		    jobBuilder = new JobBuilder();
+		    jobConfiguration.setName(jobName);
+		    jobConfiguration.setNamespace(configuration.get("namespace").toString());
+		    jobConfiguration.setImage(configuration.get("image").toString());
+		    jobConfiguration.setRestartPolicy(configuration.get("restartPolicy").toString());
+		    jobConfiguration.setCompletions(configuration.get("completions").toString());
+		    jobConfiguration.setParallelism(configuration.get("parallelism").toString());
+		    if(null != configuration.get("imagePullSecrets")){
+		    	jobConfiguration.setImagePullSecrets(configuration.get("imagePullSecrets").toString());
+		    }
+		    if(null != configuration.get("command")) {
+		    	jobConfiguration.setCommand(configuration.get("command").toString(), context.getDataContext().get("option"));
+		    }
+		    if(null != configuration.get("arguments")) {
+		    	jobConfiguration.setArguments(configuration.get("arguments").toString(), context.getDataContext().get("option"));
+		    }
+		    if(null != configuration.get("nodeSelector")) {
+		    	jobConfiguration.setNodeSelector(configuration.get("nodeSelector").toString());
+		    }
+		    if(null != configuration.get("activeDeadlineSeconds")){
+		    	jobConfiguration.setActiveDeadlineSeconds(configuration.get("activeDeadlineSeconds").toString());
+		    }
+                    client.extensions().jobs().inNamespace(namespace).withName(jobName).create(jobBuilder.build(jobConfiguration));
                     jobCloseLatch.await();
                     jobWatch.close();
                     podWatch.close();
                     client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
                     PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
-                    String name = null;
                     for (Pod pod : podList.getItems()) {
-                        name = pod.getMetadata().getName();
-                        client.pods().inNamespace(namespace).withName(name).delete();
+                        client.pods().inNamespace(namespace).withName(pod.getMetadata().getName()).delete();
                     }
                     client.close();
                 } catch (KubernetesClientException | InterruptedException e) {
