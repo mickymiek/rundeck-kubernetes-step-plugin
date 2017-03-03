@@ -114,7 +114,7 @@ public class JobConfiguration {
 	}
 
 	public void setNodeSelector(String _nodeSelector) {
-		nodeSelector = (HashMap<String, String>) Arrays.asList(_nodeSelector.split(",")).stream().map(s -> s.split("=")).collect(Collectors.toMap(e -> e[0], e -> e[1]))
+		nodeSelector = (HashMap<String, String>) Arrays.asList(_nodeSelector.split(",")).stream().map(s -> s.split("=")).collect(Collectors.toMap(e -> e[0], e -> e[1]));
 	}
 
 	public void setNamespace(String _namespace) {

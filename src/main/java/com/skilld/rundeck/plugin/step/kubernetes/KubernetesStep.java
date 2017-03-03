@@ -23,6 +23,7 @@ package com.skilld.rundeck.plugin.step.kubernetes;
 
 import com.skilld.kubernetes.JobConfiguration;
 import com.skilld.kubernetes.JobBuilder;
+import com.skilld.kubernetes.Job;
 
 import com.dtolabs.rundeck.core.common.Framework;
 import com.dtolabs.rundeck.core.plugins.Plugin;
@@ -45,7 +46,6 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import static io.fabric8.kubernetes.client.Watcher.Action.ERROR;
 import io.fabric8.kubernetes.api.model.extensions.Job;
-import io.fabric8.kubernetes.api.model.extensions.JobBuilder;
 import io.fabric8.kubernetes.api.model.extensions.JobStatus;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -118,7 +118,7 @@ public class KubernetesStep implements StepPlugin, Describable {
             Watcher jobWatcher = new Watcher<Job>() {
                 @Override
                 public void eventReceived(Action action, Job resource) {
-                    if("timeout" == getJobState(resource) || "complete" == getJobState(resource)) {
+                    if("timeout" == com.skilld.kubernetes.Job.getState(resource) || "complete" == com.skilld.kubernetes.Job.getState(resource)) {
 //                    if(resource.getStatus().getCompletionTime() != null) {
                         jobCloseLatch.countDown();
                     }
