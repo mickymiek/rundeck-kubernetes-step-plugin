@@ -23,7 +23,6 @@ package com.skilld.rundeck.plugin.step.kubernetes;
 
 import com.skilld.kubernetes.JobConfiguration;
 import com.skilld.kubernetes.JobBuilder;
-import com.skilld.kubernetes.Job;
 
 import com.dtolabs.rundeck.core.common.Framework;
 import com.dtolabs.rundeck.core.plugins.Plugin;
@@ -51,8 +50,12 @@ import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Container;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 
@@ -153,8 +156,8 @@ public class KubernetesStep implements StepPlugin, Describable {
 
             try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
                 try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
-		    jobConfiguration = new JobConfiguration();
-		    jobBuilder = new JobBuilder();
+		    JobConfiguration jobConfiguration = new JobConfiguration();
+		    JobBuilder jobBuilder = new JobBuilder();
 		    jobConfiguration.setName(jobName);
 		    jobConfiguration.setNamespace(configuration.get("namespace").toString());
 		    jobConfiguration.setImage(configuration.get("image").toString());

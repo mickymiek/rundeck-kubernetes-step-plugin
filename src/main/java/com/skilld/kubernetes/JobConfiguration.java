@@ -24,6 +24,8 @@ package com.skilld.kubernetes;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -64,10 +66,6 @@ public class JobConfiguration {
 		return arguments;
 	}
 
-	public String getOptions() {
-		return options;
-	}
-
 	public String getNodeSelector() {
 		return nodeSelector;
 	}
@@ -93,8 +91,8 @@ public class JobConfiguration {
 	}
 
 	/* Setters */
-	public void setImage(String _image) {
-		image = _image;
+	public void setName(String _name) {
+		name = _name;
 	}
 
 	public void setImage(String _image) {
@@ -137,8 +135,8 @@ public class JobConfiguration {
 		parallelism = _parallelism;
 	}
 
-	private List<String> buildInput(String _input){
-		for (Map.Entry<String, String> option : options.entrySet()){
+	private List<String> buildInput(String _input, Map<String,String> _options){
+		for (Map.Entry<String, String> option : _options.entrySet()){
 			_input = _input.replace("${" + option.getKey() + "}", option.getValue());
 		}
 		List<String> input = new ArrayList<String>();

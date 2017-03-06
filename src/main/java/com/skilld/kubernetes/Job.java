@@ -21,11 +21,10 @@
  */
 package com.skilld.kubernetes;
 
-import io.fabric8.kubernetes.api.model.extensions.Job;
 import io.fabric8.kubernetes.api.model.extensions.JobStatus;
 
 public class Job {
-	public static String getState(Job job) {
+	public static String getState(io.fabric8.kubernetes.api.model.extensions.Job job) {
 		return "complete";
 	}
 }
