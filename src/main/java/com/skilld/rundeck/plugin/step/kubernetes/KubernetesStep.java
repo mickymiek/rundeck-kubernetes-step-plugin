@@ -159,11 +159,12 @@ public class KubernetesStep implements StepPlugin, Describable {
 		    JobConfiguration jobConfiguration = new JobConfiguration();
 		    JobBuilder jobBuilder = new JobBuilder();
 		    jobConfiguration.setName(jobName);
+		    jobConfiguration.setLabels(labels);
 		    jobConfiguration.setNamespace(configuration.get("namespace").toString());
 		    jobConfiguration.setImage(configuration.get("image").toString());
 		    jobConfiguration.setRestartPolicy(configuration.get("restartPolicy").toString());
-		    jobConfiguration.setCompletions(configuration.get("completions").toString());
-		    jobConfiguration.setParallelism(configuration.get("parallelism").toString());
+		    jobConfiguration.setCompletions((int)configuration.get("completions"));
+		    jobConfiguration.setParallelism((int)configuration.get("parallelism"));
 		    if(null != configuration.get("imagePullSecrets")){
 		    	jobConfiguration.setImagePullSecrets(configuration.get("imagePullSecrets").toString());
 		    }
@@ -177,7 +178,7 @@ public class KubernetesStep implements StepPlugin, Describable {
 		    	jobConfiguration.setNodeSelector(configuration.get("nodeSelector").toString());
 		    }
 		    if(null != configuration.get("activeDeadlineSeconds")){
-		    	jobConfiguration.setActiveDeadlineSeconds(configuration.get("activeDeadlineSeconds").toString());
+		    	jobConfiguration.setActiveDeadlineSeconds(Long.valueOf((int)configuration.get("activeDeadlineSeconds")));
 		    }
                     client.extensions().jobs().inNamespace(namespace).withName(jobName).create(jobBuilder.build(jobConfiguration));
                     jobCloseLatch.await();

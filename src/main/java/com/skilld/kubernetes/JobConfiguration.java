@@ -22,6 +22,7 @@
 package com.skilld.kubernetes;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
 import java.util.List;
@@ -40,10 +41,10 @@ public class JobConfiguration {
 	private Long activeDeadlineSeconds;
 	private String restartPolicy;
 	private Integer completions;
-	private String labels;
 	private String namespace;
-	private String nodeSelector;
+	private Map<String, String> nodeSelector;
 	private Integer parallelism;
+	private Map<String, String> labels;
 
 	/* Getters */
 	public String getName() {
@@ -66,7 +67,7 @@ public class JobConfiguration {
 		return arguments;
 	}
 
-	public String getNodeSelector() {
+	public Map<String, String> getNodeSelector() {
 		return nodeSelector;
 	}
 
@@ -88,6 +89,10 @@ public class JobConfiguration {
 
 	public Integer getParallelism() {
 		return parallelism;
+	}
+
+	public Map<String, String> getLabels(){
+		return labels;
 	}
 
 	/* Setters */
@@ -119,7 +124,7 @@ public class JobConfiguration {
 		namespace = _namespace;
 	}
 
-	public void setActiveDeadlineSeconds(String _activeDeadlineSeconds) {
+	public void setActiveDeadlineSeconds(Long _activeDeadlineSeconds) {
 		activeDeadlineSeconds = _activeDeadlineSeconds;
 	}
 
@@ -127,12 +132,16 @@ public class JobConfiguration {
 		restartPolicy = _restartPolicy;
 	}
 
-	public void setCompletions(String _completions) {
+	public void setCompletions(Integer _completions) {
 		completions = _completions;
 	}
 
-	public void setParallelism(String _parallelism) {
+	public void setParallelism(Integer _parallelism) {
 		parallelism = _parallelism;
+	}
+
+	public void setLabels(Map<String, String> _labels) {
+		labels = _labels;
 	}
 
 	private List<String> buildInput(String _input, Map<String,String> _options){
