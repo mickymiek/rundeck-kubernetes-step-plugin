@@ -21,10 +21,19 @@
  */
 package com.skilld.kubernetes;
 
-import io.fabric8.kubernetes.api.model.extensions.JobStatus;
+import io.fabric8.kubernetes.api.model.JobStatus;
+import java.util.List;
+import io.fabric8.kubernetes.api.model.JobCondition;
 
 public class Job {
-	public static String getState(io.fabric8.kubernetes.api.model.extensions.Job job) {
-		return "complete";
+	public static String getState(io.fabric8.kubernetes.api.model.Job job) {
+		String type = null;
+		for (JobCondition condition : job.getStatus().getConditions()) {
+			type = condition.getType();
+			if(type.equals("Complete")  || type.equals("Failed")){
+				break;
+			}
+		}
+		return type;
 	}
 }

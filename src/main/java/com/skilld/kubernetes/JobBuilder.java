@@ -24,14 +24,14 @@ package com.skilld.kubernetes;
 
 import com.skilld.kubernetes.JobConfiguration;
 
-import io.fabric8.kubernetes.api.model.extensions.Job;
-import io.fabric8.kubernetes.api.model.extensions.JobStatus;
+import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Container;
 
 public class JobBuilder {
 	public Job build(JobConfiguration configuration) {
-		io.fabric8.kubernetes.api.model.extensions.JobBuilder jobBuilder = new io.fabric8.kubernetes.api.model.extensions.JobBuilder()
+		io.fabric8.kubernetes.api.model.JobBuilder jobBuilder = new io.fabric8.kubernetes.api.model.JobBuilder()
 			.withNewMetadata()
 				.withName(configuration.getName())
 				.withNamespace(configuration.getNamespace())
@@ -84,7 +84,7 @@ public class JobBuilder {
 				.endSpec();
 		}
 
-		Container container = jobBuilder.getSpec().getTemplate().getSpec().getContainers().get(0);
+		Container container = jobBuilder.buildSpec().getTemplate().getSpec().getContainers().get(0);
 		if(null != configuration.getCommand()) {
 			container.setCommand(configuration.getCommand());
 		}

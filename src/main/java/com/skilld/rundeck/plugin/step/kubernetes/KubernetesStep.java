@@ -44,8 +44,8 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import static io.fabric8.kubernetes.client.Watcher.Action.ERROR;
-import io.fabric8.kubernetes.api.model.extensions.Job;
-import io.fabric8.kubernetes.api.model.extensions.JobStatus;
+import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -56,8 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
-import java.lang.Runtime;
-import java.io.PrintWriter;
+//import java.lang.Runtime;
 
 import org.apache.log4j.Logger;
 
@@ -123,8 +122,9 @@ public class KubernetesStep implements StepPlugin, Describable {
             Watcher jobWatcher = new Watcher<Job>() {
                 @Override
                 public void eventReceived(Action action, Job resource) {
-                    if("timeout" == com.skilld.kubernetes.Job.getState(resource) || "complete" == com.skilld.kubernetes.Job.getState(resource)) {
-//                    if(resource.getStatus().getCompletionTime() != null) {
+			pluginLogger.log(0, "OOOOOOOOOOOOOO" + com.skilld.kubernetes.Job.getState(resource));
+                    if("Failed" == com.skilld.kubernetes.Job.getState(resource) || "Complete" == com.skilld.kubernetes.Job.getState(resource)) {
+			    pluginLogger.log(0, "IIIIIIIIIIIIIII");
                         jobCloseLatch.countDown();
                     }
                 }
@@ -156,17 +156,10 @@ public class KubernetesStep implements StepPlugin, Describable {
                 }
             };
 
-            Runtime.getRuntime().addShutdownHook)(new Thread() {
+            /*Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
-                    try{
-                        PrintWriter writer = new PrintWriter("/tmp/testfile.txt", "UTF-8");
-                        writer.println("Hello world;");
-                        writer.close();
-                    } catch(IOException e) {
-                        logger.error(e.getMessage());
-                    }
                 }
-            });
+            });*/
 
             try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
                 try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
@@ -174,11 +167,11 @@ public class KubernetesStep implements StepPlugin, Describable {
 		    JobBuilder jobBuilder = new JobBuilder();
 		    jobConfiguration.setName(jobName);
 		    jobConfiguration.setLabels(labels);
-		    jobConfiguration.setNamespace(configuration.get("namespace").toString());
-		    jobConfiguration.setImage(configuration.get("image").toString());
-		    jobConfiguration.setRestartPolicy(configuration.get("restartPolicy").toString());
-		    jobConfiguration.setCompletions((int)configuration.get("completions"));
-		    jobConfiguration.setParallelism((int)configuration.get("parallelism"));
+		    jobConfiguration.setNamespace((String)configuration.get("namespace"));
+		    jobConfiguration.setImage((String)configuration.get("image"));
+		    jobConfiguration.setRestartPolicy((String)configuration.get("restartPolicy"));
+		    jobConfiguration.setCompletions(Integer.valueOf(configuration.get("completions").toString()));
+		    jobConfiguration.setParallelism(Integer.valueOf(configuration.get("parallelism").toString()));
 		    if(null != configuration.get("imagePullSecrets")){
 		    	jobConfiguration.setImagePullSecrets(configuration.get("imagePullSecrets").toString());
 		    }
@@ -192,7 +185,7 @@ public class KubernetesStep implements StepPlugin, Describable {
 		    	jobConfiguration.setNodeSelector(configuration.get("nodeSelector").toString());
 		    }
 		    if(null != configuration.get("activeDeadlineSeconds")){
-		    	jobConfiguration.setActiveDeadlineSeconds(Long.valueOf((int)configuration.get("activeDeadlineSeconds")));
+		    	jobConfiguration.setActiveDeadlineSeconds(Long.valueOf(configuration.get("activeDeadlineSeconds").toString()));
 		    }
                     client.extensions().jobs().inNamespace(namespace).withName(jobName).create(jobBuilder.build(jobConfiguration));
                     jobCloseLatch.await();
