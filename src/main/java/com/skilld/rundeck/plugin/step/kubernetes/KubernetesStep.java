@@ -122,9 +122,9 @@ public class KubernetesStep implements StepPlugin, Describable {
             Watcher jobWatcher = new Watcher<Job>() {
                 @Override
                 public void eventReceived(Action action, Job resource) {
-			pluginLogger.log(0, "OOOOOOOOOOOOOO" + com.skilld.kubernetes.Job.getState(resource));
+			        pluginLogger.log(0, "OOOOOOOOOOOOOO" + com.skilld.kubernetes.Job.getState(resource));
                     if("Failed" == com.skilld.kubernetes.Job.getState(resource) || "Complete" == com.skilld.kubernetes.Job.getState(resource)) {
-			    pluginLogger.log(0, "IIIIIIIIIIIIIII");
+			            pluginLogger.log(0, "IIIIIIIIIIIIIII");
                         jobCloseLatch.countDown();
                     }
                 }
@@ -161,7 +161,7 @@ public class KubernetesStep implements StepPlugin, Describable {
                 }
             });*/
 
-            try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
+            try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(W jobWatcher)) {
                 try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
 		    JobConfiguration jobConfiguration = new JobConfiguration();
 		    JobBuilder jobBuilder = new JobBuilder();
