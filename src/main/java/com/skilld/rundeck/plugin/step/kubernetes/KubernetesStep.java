@@ -56,6 +56,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.lang.Runtime;
+import java.io.PrintWriter;
 
 import org.apache.log4j.Logger;
 
@@ -153,6 +155,18 @@ public class KubernetesStep implements StepPlugin, Describable {
                     }
                 }
             };
+
+            Runtime.getRuntime().addShutdownHook)(new Thread() {
+                public void run() {
+                    try{
+                        PrintWriter writer = new PrintWriter("/tmp/testfile.txt", "UTF-8");
+                        writer.println("Hello world;");
+                        writer.close();
+                    } catch(IOException e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+            });
 
             try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
                 try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
