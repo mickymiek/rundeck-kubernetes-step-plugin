@@ -161,7 +161,7 @@ public class KubernetesStep implements StepPlugin, Describable {
                 }
             });*/
 
-            try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(W jobWatcher)) {
+            try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
                 try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
 		    JobConfiguration jobConfiguration = new JobConfiguration();
 		    JobBuilder jobBuilder = new JobBuilder();
