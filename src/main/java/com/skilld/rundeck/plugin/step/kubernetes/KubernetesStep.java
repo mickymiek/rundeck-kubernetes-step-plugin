@@ -45,6 +45,8 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import static io.fabric8.kubernetes.client.Watcher.Action.ERROR;
 import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.JobList;
+import io.fabric8.kubernetes.api.model.JobCondition;
 import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -122,9 +124,7 @@ public class KubernetesStep implements StepPlugin, Describable {
             Watcher jobWatcher = new Watcher<Job>() {
                 @Override
                 public void eventReceived(Action action, Job resource) {
-			        pluginLogger.log(0, "OOOOOOOOOOOOOO" + com.skilld.kubernetes.Job.getState(resource));
-                    if("Failed" == com.skilld.kubernetes.Job.getState(resource) || "Complete" == com.skilld.kubernetes.Job.getState(resource)) {
-			            pluginLogger.log(0, "IIIIIIIIIIIIIII");
+                    if(com.skilld.kubernetes.Job.getState(resource).equals("Failed") || com.skilld.kubernetes.Job.getState(resource).equals("Complete")) {
                         jobCloseLatch.countDown();
                     }
                 }
@@ -156,11 +156,6 @@ public class KubernetesStep implements StepPlugin, Describable {
                 }
             };
 
-            /*Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                }
-            });*/
-
             try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
                 try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
 		    JobConfiguration jobConfiguration = new JobConfiguration();
@@ -191,12 +186,19 @@ public class KubernetesStep implements StepPlugin, Describable {
                     jobCloseLatch.await();
                     jobWatch.close();
                     podWatch.close();
+/*		    Boolean failed = false;
+		    if(com.skilld.kubernetes.Job.getState(client.extensions().jobs().inNamespace(namespace).withName(jobName)).equals("Failed")) {
+			failed = true;
+		    }*/
                     client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
                     PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
                     for (Pod pod : podList.getItems()) {
                         client.pods().inNamespace(namespace).withName(pod.getMetadata().getName()).delete();
                     }
                     client.close();
+/*		    if(failed){ // better get the failure reason; probably getstate to rework
+			    throw new StepException("Timeout", Reason.UnexepectedFailure);
+		    }*/
                 } catch (KubernetesClientException | InterruptedException e) {
                     logger.error(e.getMessage(), e);
                     throw new StepException(e.getMessage(), Reason.UnexepectedFailure);

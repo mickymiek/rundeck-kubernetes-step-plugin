@@ -21,8 +21,8 @@
  */
 package com.skilld.kubernetes;
 
-import io.fabric8.kubernetes.api.model.JobStatus;
 import java.util.List;
+import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.JobCondition;
 
 public class Job {
@@ -30,7 +30,7 @@ public class Job {
 		String type = null;
 		for (JobCondition condition : job.getStatus().getConditions()) {
 			type = condition.getType();
-			if(type.equals("Complete")  || type.equals("Failed")){
+			if(type.equals("Complete") || type.equals("Failed")){
 				break;
 			}
 		}
