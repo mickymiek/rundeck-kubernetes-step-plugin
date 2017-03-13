@@ -26,14 +26,35 @@ import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.JobCondition;
 
 public class Job {
-	public static String getState(io.fabric8.kubernetes.api.model.Job job) {
+	private io.fabric8.kubernetes.api.model.Job job = null;
+	private io.fabric8.kubernetes.api.model.JobCondition jobCondition = null;
+
+	public Job (io.fabric8.kubernetes.api.model.Job _job){
+		job = _job;
+	}
+
+	public io.fabric8.kubernetes.api.model.Job getJobResource() {
+		return job;
+	}
+
+	public Boolean isComplete(io.fabric8.kubernetes.api.model.Job _job) {
 		String type = null;
-		for (JobCondition condition : job.getStatus().getConditions()) {
+		for (JobCondition condition : _job.getStatus().getConditions()) {
 			type = condition.getType();
 			if(type.equals("Complete") || type.equals("Failed")){
+				jobCondition = condition;
 				break;
 			}
 		}
-		return type;
+		return null != jobCondition;
+	}
+	public Boolean hasFailed() {
+		return null != jobCondition && jobCondition.getType().equals("Failed");
+	}
+	public Boolean hasTimedout() {
+		return null != jobCondition && jobCondition.getReason().contains("Deadline");
+	}
+	public String getCompletionReason() {
+		return (null != jobCondition) ? jobCondition.getReason() : null;
 	}
 }

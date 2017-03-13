@@ -23,9 +23,8 @@
 package com.skilld.kubernetes;
 
 import com.skilld.kubernetes.JobConfiguration;
+import com.skilld.kubernetes.Job;
 
-import io.fabric8.kubernetes.api.model.Job;
-import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Container;
 
@@ -99,6 +98,6 @@ public class JobBuilder {
 					.endSpec()
 				.endTemplate()
 			.endSpec();
-		return jobBuilder.build();
+		return new Job(jobBuilder.build());
 	}
 }
