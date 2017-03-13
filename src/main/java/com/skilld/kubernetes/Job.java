@@ -57,4 +57,13 @@ public class Job {
 	public String getCompletionReason() {
 		return (null != jobCondition) ? jobCondition.getReason() : null;
 	}
+	public void delete(io.fabric8.kubernetes.client.KubernetesClient client) {
+		String jobName = job.getMetadata().getName();
+		String namespace = job.getMetadata().getNamespace();
+		client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
+		io.fabric8.kubernetes.api.model.PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
+		for (io.fabric8.kubernetes.api.model.Pod pod : podList.getItems()) {
+			client.pods().inNamespace(namespace).withName(pod.getMetadata().getName()).delete();
+		}
+	}
 }

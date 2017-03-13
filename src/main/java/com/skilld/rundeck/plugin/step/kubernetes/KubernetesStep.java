@@ -58,7 +58,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
-//import java.lang.Runtime;
 
 import org.apache.log4j.Logger;
 
@@ -83,9 +82,16 @@ public class KubernetesStep implements StepPlugin, Describable {
 	public static final String COMPLETIONS = "completions";
 	public static final String PARALLELISM = "parallelism";
 
+	private KubernetesClient client = null;
+	private com.skilld.kubernetes.Job job = null;
+	private	Watch jobWatch = null;
+	private	Watch podWatch = null;
+
+
 	public static enum Reason implements FailureReason {
 		UnexepectedFailure,
-		ExecutionTimeoutFailure
+		ExecutionTimeoutFailure,
+		InterruptionFailure
 	}
 
 	public KubernetesStep(final Framework framework) {
@@ -116,7 +122,8 @@ public class KubernetesStep implements StepPlugin, Describable {
 		PluginLogger pluginLogger = context.getLogger();
 		Config clientConfiguration = new ConfigBuilder().withWatchReconnectLimit(2).build();
 
-		try (KubernetesClient client = new DefaultKubernetesClient(clientConfiguration)) {
+		try {
+			client = new DefaultKubernetesClient(clientConfiguration);
 			String jobName = context.getDataContext().get("job").get("name").toString().toLowerCase() + "-" + context.getDataContext().get("job").get("execid");
 			String namespace = configuration.get("namespace").toString();
 			Map<String, String> labels = new HashMap<String, String>();
@@ -146,8 +153,7 @@ public class KubernetesStep implements StepPlugin, Describable {
 			if(null != configuration.get("activeDeadlineSeconds")){
 				jobConfiguration.setActiveDeadlineSeconds(Long.valueOf(configuration.get("activeDeadlineSeconds").toString()));
 			}
-			com.skilld.kubernetes.Job job = jobBuilder.build(jobConfiguration);
-
+			job = jobBuilder.build(jobConfiguration);
 
 			CountDownLatch jobCloseLatch = new CountDownLatch(1);
 			Watcher jobWatcher = new Watcher<Job>() {
@@ -186,40 +192,36 @@ public class KubernetesStep implements StepPlugin, Describable {
 				}
 			};
 
-			try(Watch jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher)) {
-				try(Watch podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher)) {
-					client.extensions().jobs().inNamespace(namespace).withName(jobName).create(job.getJobResource());
-					jobCloseLatch.await();
-					jobWatch.close();
-					podWatch.close();
-					client.extensions().jobs().inNamespace(namespace).withName(jobName).delete();
-					PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
-					for (Pod pod : podList.getItems()) {
-						client.pods().inNamespace(namespace).withName(pod.getMetadata().getName()).delete();
-					}
-					client.close();
-					if(job.hasFailed()){
-						Reason reason = Reason.UnexepectedFailure;
-						if(job.hasTimedout()){
-							reason = Reason.ExecutionTimeoutFailure;
-						}
-						throw new StepException(job.getCompletionReason(), reason);
-					}
-				} catch (KubernetesClientException | InterruptedException e) {
-					logger.error(e.getMessage(), e);
-					throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
+			jobWatch = client.extensions().jobs().inNamespace(namespace).withLabels(labels).watch(jobWatcher);
+			podWatch = client.pods().inNamespace(namespace).withLabel("job-name", jobName).watch(podWatcher);
+			client.extensions().jobs().inNamespace(namespace).withName(jobName).create(job.getJobResource());
+			jobCloseLatch.await();
+			Terminate();
+
+			if(job.hasFailed()){
+				Reason reason = Reason.UnexepectedFailure;
+				if(job.hasTimedout()){
+					reason = Reason.ExecutionTimeoutFailure;
 				}
-			} catch (KubernetesClientException | StepException e) {
-				client.close();
-				logger.error(e.getMessage(), e);
-				throw e;
+				throw new StepException(job.getCompletionReason(), reason);
 			}
 		} catch (KubernetesClientException e) {
 			logger.error(e.getMessage(), e);
 			throw new StepException(e.getMessage(), Reason.UnexepectedFailure);
+		} catch (InterruptedException e) {
+			Terminate();
+			logger.error(e.getMessage(), e);
+			throw new StepException(e.getMessage(), Reason.InterruptionFailure);
 		} catch (StepException e) {
 			logger.error(e.getMessage(), e);
 			throw e;
 		}
+	}
+
+	private void Terminate() {
+		jobWatch.close();
+		podWatch.close();
+		job.delete(client);
+		client.close();
 	}
 }
