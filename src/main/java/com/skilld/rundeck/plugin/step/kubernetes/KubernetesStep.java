@@ -114,7 +114,7 @@ public class KubernetesStep implements StepPlugin, Describable {
 		.property(PropertyUtil.bool(KUBE_SSL, "Kubernetes SSL Validate", "Validate the Kubernetes SSL server certificate", false, "true"))
 		.property(PropertyUtil.string(IMAGE, "Image", "The container image to use", true, null))
 		.property(PropertyUtil.string(IMAGE_PULL_SECRETS, "ImagePullSecrets", "The image pull secrets name", false, null))
-		.property(PropertyUtil.select(IMAGE_PULL_POLICY, "ImagePullPolicy", "The image pull policy", true, "Never", Arrays.asList("Always", "IfNotPresent", "Never")))
+		.property(PropertyUtil.select(IMAGE_PULL_POLICY, "ImagePullPolicy", "The image pull policy", true, "Always", Arrays.asList("Always", "IfNotPresent", "Never")))
 		.property(PropertyUtil.string(COMMAND, "Command", "The command to run in the container", false, null))
 		.property(PropertyUtil.string(ARGUMENTS, "Arguments", "The command arguments", false, null))
 		.property(PropertyUtil.string(NODE_SELECTOR, "Node selector", "Kubernetes node label selector", false, null))
