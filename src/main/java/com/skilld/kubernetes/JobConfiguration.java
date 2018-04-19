@@ -177,7 +177,7 @@ public class JobConfiguration {
 
 	private String buildOption(String _input, Map<String, String> _options) {
 		for (Map.Entry<String, String> option : _options.entrySet()){
-			_input = _input.replace("${" + option.getKey() + "}", option.getValue());
+			_input = _input.replace("[[" + option.getKey() + "]]", option.getValue());
 		}
 		return _input;
 	}
